@@ -1,5 +1,4 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -43,10 +42,10 @@ import System.FilePath
 {- | Return the difference between the file at the FilePath and the index.
 If the file is not in index return Nothing.
 -}
-gitChanges :: FilePath -> IO [FilePath]
-gitChanges filename = do
+gitChanges :: [FilePath] -> IO [FilePath]
+gitChanges files = do
   (ec, _, _) <-
-    proc "git" ["ls-files", "--error-unmatch", filename]
+    proc "git" (["ls-files", "--error-unmatch"] ++ files)
       & readProcess
 
   result <- "git rev-parse --show-toplevel" & readProcessStdout_
@@ -60,7 +59,7 @@ gitChanges filename = do
   case ec of
     ExitSuccess -> do
       (items, _) <-
-        proc "git" ["status", "--porcelain=v1", filename]
+        proc "git" (["status", "--porcelain=v1"] ++ files)
           & readProcess_
 
       let gits = items & LazyText.decodeUtf8 & parseGitProcelain
@@ -72,14 +71,14 @@ gitChanges filename = do
             . map (\a -> makeRelative cd (gitpath </> gsFile a))
             . filter (\a -> gsY a `notElem` [Unmodified, Ignored, Deleted])
             $ res
-    ExitFailure _ -> gitLsFiles filename
+    ExitFailure _ -> gitLsFiles files
 
 -- | Return all unignored files for with the filename as prefix
-gitLsFiles :: FilePath -> IO [FilePath]
-gitLsFiles filename =
-  proc "git" ["ls-files", "--exclude-standard", "--cached", "--others", filename]
-    & readProcess_
-    & fmap (map LazyText.unpack . LazyText.lines . LazyText.decodeUtf8 . fst)
+gitLsFiles :: [FilePath] -> IO [FilePath]
+gitLsFiles files =
+  proc "git" (["ls-files", "--exclude-standard", "--cached", "--others"] ++ files)
+    & readProcessStdout_
+    & fmap (map LazyText.unpack . LazyText.lines . LazyText.decodeUtf8)
 
 data Status
   = Unmodified

@@ -13,8 +13,19 @@ dependencies:
   - directory
   - filepath
   - tasty
+  - tasty-hunit
   - text
   - typed-process
 
 library:
   source-dirs: src
+
+tests:
+  tasty-glitter-test: 
+    source-dirs: test/src
+    main: Main.hs
+    dependencies:
+      - tasty
+      - tasty-hunit
+      - tasty-glitter
+
