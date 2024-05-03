@@ -1,0 +1,20 @@
+name: tasty-glitter
+version: 0.1.0
+synopsis: A git-based tasty golden test
+maintainer: Christian Gram Kalhauge <christiankalhauge@gmail.com>
+category: Testing
+
+ghc-options: -Wall -fno-warn-incomplete-uni-patterns 
+
+dependencies:
+  - base >= 4.9 && < 5
+  - attoparsec
+  - bytestring
+  - directory
+  - filepath
+  - tasty
+  - text
+  - typed-process
+
+library:
+  source-dirs: src

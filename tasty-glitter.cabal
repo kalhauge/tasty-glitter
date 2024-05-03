@@ -1,0 +1,32 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           tasty-glitter
+version:        0.1.0
+synopsis:       A git-based tasty golden test
+category:       Testing
+maintainer:     Christian Gram Kalhauge <christiankalhauge@gmail.com>
+build-type:     Simple
+
+library
+  exposed-modules:
+      Control.Git
+      Test.Tasty.Glitter
+  other-modules:
+      Paths_tasty_glitter
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -fno-warn-incomplete-uni-patterns
+  build-depends:
+      attoparsec
+    , base >=4.9 && <5
+    , bytestring
+    , directory
+    , filepath
+    , tasty
+    , text
+    , typed-process
+  default-language: Haskell2010
