@@ -7,6 +7,8 @@ module Test.Tasty.Glitter (
 
   -- * Utils
   testEachChangedFile,
+  testShouldNotHaveChanged,
+  noop,
 
   -- ** Subprocesses
   check,
@@ -56,21 +58,16 @@ glitter
   :: TestName
   -- ^ The name of the test
   -> [FilePath]
-  -- ^ A file or folder to check for changes
+  -- ^ The files or folders to check for changes
   -> IO a
-  -- ^ An action that generate the file or folder (or does nothing)
+  -- ^ An action that generate or changes the files or folders (or does nothing)
   -> (ChangedFiles -> [TestTree])
   -- ^ Given an resource of changed tests, create a test-tree.
   -> TestTree
 glitter name fp gen tests =
   askOption \(GlitterConfig{detector}) ->
-    withResource (gen >> detector fp) (const (pure ())) \files ->
-      testGroup
-        name
-        ( tests files
-            ++ [ singleTest "should not have changed" (GlitterTest files)
-               ]
-        )
+    withResource (gen >> detector fp) (const (pure ())) $
+      testGroup name . tests
 
 type ChangedFiles = IO [FilePath]
 
@@ -78,6 +75,17 @@ type ChangedFiles = IO [FilePath]
 testEachChangedFile :: TestName -> ChangedFiles -> (FilePath -> Assertion) -> TestTree
 testEachChangedFile tn files cs = testCaseSteps tn \step -> do
   files >>= mapM_ \f -> step f >> cs f
+
+-- | Test that the files have not changed
+testShouldNotHaveChanged :: TestName -> ChangedFiles -> TestTree
+testShouldNotHaveChanged tn files = testCase tn do
+  files >>= \case
+    [] -> pure ()
+    rs -> assertFailure (unlines rs)
+
+-- | Don't do anything
+noop :: IO ()
+noop = pure ()
 
 -- | Capture the stdout of a program
 checkAndCapture :: ProcessConfig stdin stdout stderr -> Assertion

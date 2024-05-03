@@ -14,7 +14,7 @@ tests :: TestTree
 tests =
   testGroup
     "tests"
-    [ glitter "source" ["src/", "test/src"] (pure ()) \files ->
+    [ glitter "source" ["src/", "test/src"] noop \files ->
         [ testEachChangedFile "should format" files \file -> do
             checkAndCapture $ proc "fourmolu" ["-m", "check", file]
         ]
