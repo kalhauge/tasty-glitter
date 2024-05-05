@@ -36,6 +36,7 @@ test-suite tasty-glitter-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
+      Control.GitSpec
       Paths_tasty_glitter
   hs-source-dirs:
       test/src
@@ -46,6 +47,7 @@ test-suite tasty-glitter-test
     , bytestring
     , directory
     , filepath
+    , hspec-expectations-pretty-diff
     , tasty
     , tasty-glitter
     , tasty-hunit

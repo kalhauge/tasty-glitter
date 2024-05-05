@@ -3,11 +3,14 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Test.Tasty.Glitter (
-  glitter,
+  testGlitter,
+
+  -- * Option
+  GlitterConfig,
 
   -- * Utils
   testEachChangedFile,
-  testShouldNotHaveChanged,
+  testShouldNotHaveChangedDiff,
   noop,
 
   -- ** Subprocesses
@@ -21,7 +24,7 @@ import Test.Tasty.Providers
 
 import Test.Tasty.HUnit
 
-import Control.Git (gitChanges, gitLsFiles)
+import Control.Git (gitChanges, gitDiffFiles, gitLsFiles)
 import qualified Data.Text.Lazy as LazyText
 import qualified Data.Text.Lazy.Encoding as LazyText
 import System.Exit
@@ -33,11 +36,11 @@ newtype GlitterConfig = GlitterConfig
 
 instance IsOption GlitterConfig where
   defaultValue = GlitterConfig gitChanges
-  optionName = pure "glitter"
-  optionHelp = pure "glitter help"
-  showDefaultValue = const (Just "git")
+  optionName = pure "changed-files"
+  optionHelp = pure "choose the strategy for finding changed files."
+  showDefaultValue = const (Just "unstaged")
   parseValue = \case
-    "git" -> Just defaultValue
+    "unstaged" -> Just defaultValue
     "all" -> Just (GlitterConfig gitLsFiles)
     _ -> Nothing
 
@@ -54,7 +57,7 @@ instance IsTest GlitterTest where
       fs' -> pure $ testFailed (unlines fs')
 
 -- | A glitter test.
-glitter
+testGlitter
   :: TestName
   -- ^ The name of the test
   -> [FilePath]
@@ -64,7 +67,7 @@ glitter
   -> (ChangedFiles -> [TestTree])
   -- ^ Given an resource of changed tests, create a test-tree.
   -> TestTree
-glitter name fp gen tests =
+testGlitter name fp gen tests =
   askOption \(GlitterConfig{detector}) ->
     withResource (gen >> detector fp) (const (pure ())) $
       testGroup name . tests
@@ -72,23 +75,28 @@ glitter name fp gen tests =
 type ChangedFiles = IO [FilePath]
 
 -- | Test each file in succession.
-testEachChangedFile :: TestName -> ChangedFiles -> (FilePath -> Assertion) -> TestTree
+testEachChangedFile :: (HasCallStack) => TestName -> ChangedFiles -> (FilePath -> Assertion) -> TestTree
 testEachChangedFile tn files cs = testCaseSteps tn \step -> do
   files >>= mapM_ \f -> step f >> cs f
 
--- | Test that the files have not changed
-testShouldNotHaveChanged :: TestName -> ChangedFiles -> TestTree
-testShouldNotHaveChanged tn files = testCase tn do
+{- | Test that the files are all staged.
+Output a diff if they are not.
+-}
+testShouldNotHaveChangedDiff :: (HasCallStack) => TestName -> ChangedFiles -> TestTree
+testShouldNotHaveChangedDiff tn files = testCase tn do
   files >>= \case
     [] -> pure ()
-    rs -> assertFailure (unlines rs)
+    files' -> do
+      gitDiffFiles files' >>= \case
+        Nothing -> pure ()
+        Just err -> assertFailure err
 
 -- | Don't do anything
 noop :: IO ()
 noop = pure ()
 
 -- | Capture the stdout of a program
-checkAndCapture :: ProcessConfig stdin stdout stderr -> Assertion
+checkAndCapture :: (HasCallStack) => ProcessConfig stdin stdout stderr -> Assertion
 checkAndCapture config = do
   (err, bs) <- readProcessInterleaved config
   case err of
@@ -103,7 +111,7 @@ checkAndCapture config = do
         )
 
 -- | Capture the stdout of a program
-check :: ProcessConfig stdin stdout stderr -> Assertion
+check :: (HasCallStack) => ProcessConfig stdin stdout stderr -> Assertion
 check config = do
   err <- runProcess config
   case err of

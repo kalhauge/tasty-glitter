@@ -8,6 +8,7 @@
 module Control.Git (
   gitChanges,
   gitLsFiles,
+  gitDiffFiles,
 
   -- * Helpers
   GitStatus (..),
@@ -39,8 +40,8 @@ import System.Directory (getCurrentDirectory)
 -- filepat
 import System.FilePath
 
-{- | Return the difference between the file at the FilePath and the index.
-If the file is not in index return Nothing.
+{- | Given a list of files of folders, list the files
+or subfiles, that are not fully staged.
 -}
 gitChanges :: [FilePath] -> IO [FilePath]
 gitChanges files = do
@@ -79,6 +80,16 @@ gitLsFiles files =
   proc "git" (["ls-files", "--exclude-standard", "--cached", "--others"] ++ files)
     & readProcessStdout_
     & fmap (map LazyText.unpack . LazyText.lines . LazyText.decodeUtf8)
+
+-- | Return all unignored files for with the filename as prefix
+gitDiffFiles :: [FilePath] -> IO (Maybe String)
+gitDiffFiles files = do
+  (err, stdout) <-
+    proc "git" (["diff", "--word-diff=color", "--exit-code"] ++ files)
+      & readProcessStdout
+  pure $ case err of
+    ExitSuccess -> Nothing
+    ExitFailure _ -> Just (LazyText.unpack . LazyText.decodeUtf8 $ stdout)
 
 data Status
   = Unmodified

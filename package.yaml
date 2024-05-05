@@ -28,4 +28,5 @@ tests:
       - tasty
       - tasty-hunit
       - tasty-glitter
+      - hspec-expectations-pretty-diff
 

@@ -43,6 +43,7 @@
           haskell-language-server
           hpack
           fourmolu
+          graphviz
         ];
         withHoogle = true;
       in {
