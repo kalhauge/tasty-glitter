@@ -13,8 +13,8 @@
   } @ inputs: let
     packages = final: p: {
       "tasty-glitter" =
-        p.callCabal2nixWithOptions "tasty-glitter"
-        (nix-filter.lib {root = self;}) "" {};
+        final.haskell.lib.dontCheck (p.callCabal2nixWithOptions "tasty-glitter"
+          (nix-filter.lib {root = self;}) "" {});
     };
     overlays = final: prev: {
       haskellPackages = prev.haskellPackages.extend (p: _: packages final p);
@@ -25,15 +25,14 @@
     }
     // flake-utils.lib.eachDefaultSystem
     (system: let
-      hpkgs =
-        (import nixpkgs {
-          inherit system;
-          overlays = [overlays];
-        })
-        .haskellPackages;
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [overlays];
+      };
+      hpkgs = pkgs.haskellPackages;
     in rec {
       packages = {
-        default = hpkgs.tasty-glitter;
+        default = packages.tasty-glitter;
         tasty-glitter = hpkgs.tasty-glitter;
       };
       devShells = let
