@@ -6,7 +6,7 @@ import Test.Tasty
 import Test.Tasty.Expected
 import Test.Tasty.Glitter
 
-import System.FilePath (replaceExtension, (</>))
+import System.FilePath (replaceExtension, (<.>), (</>))
 import System.Process.Typed
 
 -- import Test.Hspec.Expectations.Pretty
@@ -56,4 +56,30 @@ test =
           writeFile
             (dir </> "reversed.dot")
             "digraph G { C -> B -> A; B -> C }"
+    , testTranspiling
     ]
+
+-- | Test if our compiler produce c-files that compile.
+testTranspiling :: TestTree
+testTranspiling =
+  testGroup
+    "transpiling"
+    [ testGroup
+      name
+      [ -- Check that the file compiles with clang
+        assayEach "should compile" \file -> do
+          proc "clang" ["-o", "/dev/null", file]
+            `shouldExitWith` ExitSuccess
+      , -- Check that the file has not changed.
+        assayShouldBeStaged
+      ]
+      & withPopulatedFile ("expected" </> "cfiles" </> name <.> "c") \fp -> do
+        writeFile fp (transpile example)
+    | (name, example) <- examples
+    ]
+ where
+  examples =
+    [ ("minimal", "int main(void) {}")
+    , ("bigger", "int main(void) { return 0; }")
+    ]
+  transpile = id

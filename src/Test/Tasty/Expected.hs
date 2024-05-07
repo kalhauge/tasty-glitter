@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE LambdaCase #-}
 
 -- | A temporary part of the library. Might move to its own package.
 module Test.Tasty.Expected (
@@ -19,6 +20,7 @@ module Test.Tasty.Expected (
 import Control.Exception
 import Control.Monad
 import Data.Data (Typeable)
+import Data.Functor
 import Data.IORef
 import Data.List
 import qualified Data.Text.Lazy as LazyText
@@ -60,8 +62,10 @@ instance IsTest ExpectedSteps where
         atomicModifyIORef ref (\l -> ((tme, msg) : l, ()))
 
     hunitResult <-
-      (Right <$> assertionFn stepFn)
-        `catch` \(SomeException ex) -> return $ Left (displayException ex)
+      try (assertionFn stepFn) <&> \case
+        Right () -> Right ()
+        Left (HUnit.HUnitFailure mbloc message) ->
+          Left $ prependLocation mbloc (HUnit.formatFailureReason message)
 
     endTime <- getTime
 
