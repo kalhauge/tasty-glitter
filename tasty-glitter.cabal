@@ -6,9 +6,9 @@ cabal-version: 1.12
 
 name:           tasty-glitter
 version:        0.1.0
-synopsis:       A git-based tasty golden test
+synopsis:       A git-based tasty glitter test
 category:       Testing
-maintainer:     Christian Gram Kalhauge <christiankalhauge@gmail.com>
+maintainer:     Christian Gram Kalhauge <chrg@dtu.dk>
 build-type:     Simple
 
 library
@@ -28,7 +28,6 @@ library
     , bytestring
     , directory
     , filepath
-    , hspec-expectations-pretty-diff
     , tagged
     , tasty
     , text
@@ -55,7 +54,6 @@ test-suite tasty-glitter-test
     , tagged
     , tasty
     , tasty-glitter
-    , tasty-hunit
     , text
     , typed-process
   default-language: Haskell2010

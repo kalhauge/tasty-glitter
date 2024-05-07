@@ -1,2 +1,3 @@
 function-arrows: leading
+column-limit: 120
 indentation: 2

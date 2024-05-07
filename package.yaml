@@ -1,7 +1,7 @@
 name: tasty-glitter
 version: 0.1.0
-synopsis: A git-based tasty golden test
-maintainer: Christian Gram Kalhauge <christiankalhauge@gmail.com>
+synopsis: A git-based tasty glitter test
+maintainer: Christian Gram Kalhauge <chrg@dtu.dk>
 category: Testing
 
 ghc-options: -Wall -fno-warn-incomplete-uni-patterns 
@@ -16,7 +16,6 @@ dependencies:
   - HUnit
   - text
   - tagged
-  - hspec-expectations-pretty-diff
   - typed-process
 
 library:
@@ -28,7 +27,6 @@ tests:
     main: Main.hs
     dependencies:
       - tasty
-      - tasty-hunit
       - tasty-glitter
       - hspec-expectations-pretty-diff
 
