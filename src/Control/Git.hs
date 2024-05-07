@@ -9,6 +9,7 @@ module Control.Git (
   gitChanges,
   gitLsFiles,
   gitDiffFiles,
+  gitBaseDirectory,
 
   -- * Helpers
   GitStatus (..),
@@ -40,6 +41,13 @@ import System.Directory (getCurrentDirectory)
 -- filepat
 import System.FilePath
 
+gitBaseDirectory :: IO FilePath
+gitBaseDirectory = do
+  result <- "git rev-parse --show-toplevel" & readProcessStdout_
+  case fmap LazyText.unpack . LazyText.lines . LazyText.decodeUtf8 $ result of
+    [gitpath] -> pure gitpath
+    _ow -> error "Unexpected number of lines in git rev-parse"
+
 {- | Given a list of files of folders, list the files
 or subfiles, that are not fully staged.
 -}
@@ -49,12 +57,7 @@ gitChanges files = do
     proc "git" (["ls-files", "--error-unmatch"] ++ files)
       & readProcess
 
-  result <- "git rev-parse --show-toplevel" & readProcessStdout_
-  gitpath <-
-    case fmap LazyText.unpack . LazyText.lines . LazyText.decodeUtf8 $ result of
-      [gitpath] -> pure gitpath
-      _ow -> error "Unexpected number of lines in git rev-parse"
-
+  gitpath <- gitBaseDirectory
   cd <- getCurrentDirectory
 
   case ec of
@@ -83,6 +86,7 @@ gitLsFiles files =
 
 -- | Return all unignored files for with the filename as prefix
 gitDiffFiles :: [FilePath] -> IO (Maybe String)
+gitDiffFiles [] = pure Nothing
 gitDiffFiles files = do
   (err, stdout) <-
     proc "git" (["diff", "--word-diff=color", "--exit-code"] ++ files)

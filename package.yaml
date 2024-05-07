@@ -13,8 +13,10 @@ dependencies:
   - directory
   - filepath
   - tasty
-  - tasty-hunit
+  - HUnit
   - text
+  - tagged
+  - hspec-expectations-pretty-diff
   - typed-process
 
 library:

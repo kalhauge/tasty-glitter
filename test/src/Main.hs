@@ -3,49 +3,57 @@
 module Main where
 
 import Test.Tasty
+import Test.Tasty.Expected
 import Test.Tasty.Glitter
-import Test.Tasty.Options
 
-import Control.Monad (when)
-import Data.Data (Proxy (Proxy))
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath (replaceExtension, takeExtension)
+import System.FilePath (replaceExtension, (</>))
 import System.Process.Typed
 
+-- import Test.Hspec.Expectations.Pretty
+
 import qualified Control.GitSpec
+import Data.Function
+import System.IO (IOMode (..), hFlush, hPutStrLn, withFile)
 
 main :: IO ()
-main =
-  defaultMainWithIngredients ingr (testGroup "tasty-glitter" [test, Control.GitSpec.test])
- where
-  ingr =
-    includingOptions [Option (Proxy :: Proxy GlitterConfig)]
-      : defaultIngredients
+main = defaultMain (testGroup "tasty-glitter" [test, Control.GitSpec.test])
 
 test :: TestTree
 test =
   testGroup
     "Main"
-    [ testGlitter "source" ["src/", "test/src"] noop \files ->
-        [ testEachChangedFile "should format" files \file -> do
-            checkAndCapture $ proc "fourmolu" ["-m", "check", file]
+    [ testGroup
+        "source"
+        [ assayEach "should format" \file -> do
+            proc "fourmolu" ["-m", "check", file]
+              `shouldExitWith` ExitSuccess
         ]
-    , testGlitter
-        "to dot"
-        ["expected/graphs"]
-        do
-          createDirectoryIfMissing True "expected/graphs"
+        & filterGlitter (extensionIs ".hs")
+    , testGroup
+        "USAGE.md"
+        [assayShouldBeStaged]
+        & withPopulatedFile "USAGE.md" \fp -> withFile fp WriteMode \h -> do
+          hPutStrLn h "This file shows how to use the tasty-glitter-test test-suite:"
+          hPutStrLn h "```shell"
+          hPutStrLn h "$> cabal run tasty-glitter-test -- --help"
+          hFlush h
+          proc "cabal" ["run", "tasty-glitter-test", "--", "--help"]
+            & setStdout (useHandleOpen h)
+            & runProcess_
+          hPutStrLn h "```"
+    , testGroup
+        "dot graphs"
+        [ assayEach "should produce pdf" \file -> do
+            let args = ["-Tpdf", file, "-o", replaceExtension file ".pdf"]
+            proc "dot" args `shouldExitWith` ExitSuccess
+        , assayShouldBeStaged
+        ]
+        & filterGlitter (extensionIs ".dot")
+        & withPopulatedDirectory "expected/graphs" ["*.pdf"] \dir -> do
           writeFile
-            "expected/graphs/simple.dot"
+            (dir </> "simple.dot")
             "digraph G { A -> B -> C; C -> B }"
           writeFile
-            "expected/graphs/reversed.dot"
+            (dir </> "reversed.dot")
             "digraph G { C -> B -> A; B -> C }"
-        \files ->
-          [ testEachChangedFile "should produce pdf" files \file -> do
-              when (takeExtension file == ".dot") do
-                let args = ["-Tpdf", file, "-o", replaceExtension file ".pdf"]
-                checkAndCapture $ proc "dot" args
-          , testShouldNotHaveChangedDiff "should not have changed" files
-          ]
     ]

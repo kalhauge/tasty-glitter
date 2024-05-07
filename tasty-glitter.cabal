@@ -14,6 +14,7 @@ build-type:     Simple
 library
   exposed-modules:
       Control.Git
+      Test.Tasty.Expected
       Test.Tasty.Glitter
   other-modules:
       Paths_tasty_glitter
@@ -21,13 +22,15 @@ library
       src
   ghc-options: -Wall -fno-warn-incomplete-uni-patterns
   build-depends:
-      attoparsec
+      HUnit
+    , attoparsec
     , base >=4.9 && <5
     , bytestring
     , directory
     , filepath
+    , hspec-expectations-pretty-diff
+    , tagged
     , tasty
-    , tasty-hunit
     , text
     , typed-process
   default-language: Haskell2010
@@ -42,12 +45,14 @@ test-suite tasty-glitter-test
       test/src
   ghc-options: -Wall -fno-warn-incomplete-uni-patterns
   build-depends:
-      attoparsec
+      HUnit
+    , attoparsec
     , base >=4.9 && <5
     , bytestring
     , directory
     , filepath
     , hspec-expectations-pretty-diff
+    , tagged
     , tasty
     , tasty-glitter
     , tasty-hunit
