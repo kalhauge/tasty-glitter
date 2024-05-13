@@ -11,6 +11,7 @@ module Test.Tasty.Expected (
 
   -- * Helpers
   shouldExitWith,
+  prependLocation,
 
   -- * Advanced Stuff
   Expected (..),

@@ -36,6 +36,7 @@ import Test.Tasty.Providers
 
 import Test.Tasty.Expected
 
+import Control.Exception
 import Control.Git (gitChanges, gitDiffFiles, gitLsFiles)
 import Control.Monad
 import Data.Data (Proxy (..), Typeable)
@@ -44,6 +45,7 @@ import GHC.Stack (HasCallStack)
 import System.Directory
 import System.FilePath
 import Test.HUnit (assertFailure)
+import qualified Test.HUnit.Lang as HUnit
 
 {- | A glitter file, is a file that exist and potentially should
 be persisted in the repository, if it passes all it's tests.
@@ -86,8 +88,11 @@ instance forall t. (IsTest t) => IsTest (GlitterTest t) where
           : unTagged (testOptions @t)
       )
   run options GlitterTest{fileCheck} prog = do
-    fp <- glitterfiles (lookupOption options)
-    run options (fileCheck fp) prog
+    try (glitterfiles (lookupOption options)) >>= \case
+      Right fp ->
+        run options (fileCheck fp) prog
+      Left (HUnit.HUnitFailure mbloc message) ->
+        pure $ testFailed (prependLocation mbloc (HUnit.formatFailureReason message))
 
 -- | Determine if glitter files are gold.
 assay :: TestName -> ([FilePath] -> Expectation) -> TestTree
