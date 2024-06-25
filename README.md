@@ -100,6 +100,11 @@ We have plans for adding an option to specify changes according to a specific
 commit, so that CI/CD's only have to check changes since last known working
 commit.
 
+## Future Work 
+
+- Make all of this work even in non-git repositories (this is usefull when getting tests to work in 
+  nix packages.)
+
 ## Related Packages
 
 - [`hspec-golden`](https://hackage.haskell.org/package/hspec-golden)
