@@ -1,8 +1,8 @@
 {
   inputs = {
-    nixpkgs.url = github:nixos/nixpkgs/nixpkgs-unstable;
-    flake-utils.url = github:numtide/flake-utils;
-    nix-filter.url = github:numtide/nix-filter;
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+    nix-filter.url = "github:numtide/nix-filter";
   };
   outputs = {
     self,
@@ -11,16 +11,17 @@
     nix-filter,
     ...
   } @ inputs: let
-    packages = final: p: {
+    haskellOverlay = pkgs: final: prev: {
       "tasty-glitter" =
-        final.haskell.lib.dontCheck (p.callCabal2nixWithOptions "tasty-glitter"
+        pkgs.haskell.lib.dontCheck (final.callCabal2nixWithOptions "tasty-glitter"
           (nix-filter.lib {root = self;}) "" {});
     };
     overlays = final: prev: {
-      haskellPackages = prev.haskellPackages.extend (p: _: packages final p);
+      haskellPackages = prev.haskellPackages.extend (haskellOverlay final);
     };
   in
     {
+      inherit haskellOverlay;
       overlays.default = overlays;
     }
     // flake-utils.lib.eachDefaultSystem
